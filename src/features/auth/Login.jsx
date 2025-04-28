@@ -10,18 +10,21 @@ export default function Login() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const userFound = users.find(
-      (user) => user.id === Number(id) && user.password === password
+    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
+    const allUsers = [...users, ...localUsers];
+
+    const userFound = allUsers.find(
+      (user) => user.id.toString() === id.trim() && user.password === password
     );
 
     if (userFound) {
       console.log("✅ Login exitoso");
-      
+
       localStorage.setItem("userName", userFound.name);
       localStorage.setItem("userSurname", userFound.surname);
+      localStorage.setItem("userId", userFound.id);
 
       navigate("/dashboard");
-      // Aquí podrías navegar a otra página, guardar sesión, etc.
     } else {
       console.log("❌ ID o contraseña incorrectos");
     }
@@ -76,7 +79,7 @@ export default function Login() {
                 value={id}
                 onChange={(e) => setId(e.target.value)}
                 className="h-[50px] w-full box-border border-2 border-[#f4f9e9] rounded-[8px] bg-[#eef0eb] text-[#153243] text-[18px] shadow-md
-    focus:border-[#b4b8ab] focus:outline-none transition-colors"
+                focus:border-[#b4b8ab] focus:outline-none transition-colors"
                 placeholder="Ingrese su ID"
                 required
               />
@@ -91,7 +94,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-[50px] w-full box-border border-2 border-[#f4f9e9] rounded-[8px] bg-[#eef0eb] text-[#153243] text-[18px] shadow-md
-    focus:border-[#b4b8ab] focus:outline-none transition-colors"
+                focus:border-[#b4b8ab] focus:outline-none transition-colors"
                 placeholder="Ingrese su contraseña"
                 required
               />
@@ -101,9 +104,9 @@ export default function Login() {
               <button
                 type="submit"
                 className="h-[50px] w-full box-border bg-[#eef0eb] text-[#284b63] border-2 border-[#f4f9e9] rounded-[8px] font-bold text-[20px]
-  hover:bg-[#b4b8ab] hover:border-[#9ea295]
-  focus:bg-[#b4b8ab] focus:border-[#9ea295] focus:outline-none
-  transition-colors shadow-lg"
+                hover:bg-[#b4b8ab] hover:border-[#9ea295]
+                focus:bg-[#b4b8ab] focus:border-[#9ea295] focus:outline-none
+                transition-colors shadow-lg"
               >
                 Ingresar
               </button>

@@ -1,0 +1,210 @@
+import { useState, useEffect } from "react";
+import users from "../data/users.json";
+
+export default function Gestion() {
+  const [id, setId] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [password, setPassword] = useState("");
+  const [ubicacion, setUbicacion] = useState("");
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+
+  useEffect(() => {
+    if (id.trim() !== "") {
+      const localUsers = JSON.parse(localStorage.getItem("users")) || [];
+      const allUsers = [...users, ...localUsers];
+
+      const user = allUsers.find((user) => user.id.toString() === id.trim());
+      if (user) {
+        setNombre(user.name);
+        setApellido(user.surname);
+        setPassword(user.password);
+        setUbicacion(user.ubicacion || "");
+      } else {
+        setNombre("");
+        setApellido("");
+        setPassword("");
+        setUbicacion("");
+      }
+    } else {
+      setNombre("");
+      setApellido("");
+      setPassword("");
+      setUbicacion("");
+    }
+  }, [id]);
+
+  const handleGestionar = () => {
+    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
+    const updatedUsers = localUsers.map((user) => {
+      if (user.id.toString() === id.trim()) {
+        return {
+          ...user,
+          name: nombre,
+          surname: apellido,
+          password: password,
+          ubicacion: ubicacion || "None",
+        };
+      }
+      return user;
+    });
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    alert("Usuario actualizado correctamente ✅");
+  };
+
+  const handleEliminar = () => {
+    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
+    const filteredUsers = localUsers.filter(
+      (user) => user.id.toString() !== id.trim()
+    );
+    localStorage.setItem("users", JSON.stringify(filteredUsers));
+    setId("");
+    setNombre("");
+    setApellido("");
+    setPassword("");
+    setUbicacion("");
+    setConfirmarEliminar(false);
+    alert("Usuario eliminado correctamente ✅");
+  };
+
+  return (
+    <div className="h-[90vh] flex justify-center items-center gap-[32px]">
+      <form className="bg-[#b4b8ab] p-[24px] rounded-[8px] w-[45%] h-[85%] shadow-md flex flex-col justify-center">
+        <h2 className="text-[#153243] text-[28px] font-bold mb-[24px] text-center">
+          Gestionar Usuario
+        </h2>
+
+        <div className="flex flex-col gap-[16px]">
+          <div>
+            <label className="block text-[#153243] text-[18px] mb-[4px]">
+              ID
+            </label>
+            <input
+              type="text"
+              value={id}
+              onChange={(e) => setId(e.target.value)}
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
+              placeholder="Ingrese el ID"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#153243] text-[18px] mb-[4px]">
+              Nombre
+            </label>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
+              placeholder="Nombre"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#153243] text-[18px] mb-[4px]">
+              Apellido
+            </label>
+            <input
+              type="text"
+              value={apellido}
+              onChange={(e) => setApellido(e.target.value)}
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
+              placeholder="Apellido"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#153243] text-[18px] mb-[4px]">
+              Contraseña
+            </label>
+            <input
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
+              placeholder="Contraseña"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[#153243] text-[18px] mb-[4px]">
+              Ubicación
+            </label>
+            <input
+              type="text"
+              value={ubicacion}
+              onChange={(e) => setUbicacion(e.target.value)}
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
+              placeholder="Ubicación"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-between mt-[24px]">
+          <button
+            type="button"
+            onClick={handleGestionar}
+            className="w-[48%] bg-[#284b63] text-[#eef0eb] p-[12px] rounded-[8px] font-bold hover:bg-[#153243] transition-colors"
+          >
+            Gestionar
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setConfirmarEliminar(true)}
+            className="w-[48%] bg-[#b91c1c] text-[#eef0eb] p-[12px] rounded-[8px] font-bold hover:bg-[#7f1d1d] transition-colors"
+          >
+            Eliminar
+          </button>
+        </div>
+
+        {confirmarEliminar && (
+          <div className="mt-[16px] p-[16px] bg-[#eef0eb] text-[#153243] rounded-[8px] shadow-md">
+            <p className="mb-[8px]">¿Estás seguro de eliminar este usuario?</p>
+            <div className="flex gap-[12px]">
+              <button
+                onClick={handleEliminar}
+                type="button"
+                className="bg-[#b91c1c] hover:bg-[#7f1d1d] text-[#eef0eb] px-[12px] py-[8px] rounded-[8px]"
+              >
+                Sí, eliminar
+              </button>
+              <button
+                onClick={() => setConfirmarEliminar(false)}
+                type="button"
+                className="bg-[#284b63] hover:bg-[#153243] text-[#eef0eb] px-[12px] py-[8px] rounded-[8px]"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </form>
+
+      {/* Vista Previa */}
+      <div className="bg-[#b4b8ab] p-[24px] rounded-[8px] w-[45%] h-[85%] shadow-md flex flex-col justify-center">
+        <h2 className="text-[#153243] text-[28px] font-bold mb-[24px] text-center">
+          Vista Previa
+        </h2>
+        <div className="text-[#153243] text-[18px] space-y-[8px]">
+          <p>
+            <strong>ID:</strong> {id || "None"}
+          </p>
+          <p>
+            <strong>Contraseña:</strong> {password || "None"}
+          </p>
+          <p>
+            <strong>Nombre:</strong> {nombre || "None"}
+          </p>
+          <p>
+            <strong>Apellido:</strong> {apellido || "None"}
+          </p>
+          <p>
+            <strong>Ubicación:</strong> {ubicacion || "None"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
