@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Assign() {
   const [id, setId] = useState("");
@@ -6,28 +7,43 @@ export default function Assign() {
   const [ocupacion, setOcupacion] = useState("");
   const [fecha, setFecha] = useState("");
 
-  const handleAsignarTarea = (e) => {
+  const handleAsignarTarea = async (e) => {
     e.preventDefault();
 
-    const existingTasks = JSON.parse(localStorage.getItem("tareas")) || [];
-    const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
+    // 1. Verifica si el usuario existe
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("address")
+      .eq("id", id.trim())
+      .single();
 
-    const userFound = existingUsers.find(
-      (user) => user.id.toString() === id.trim()
-    );
+    if (userError || !user) {
+      alert("❌ No se encontró un usuario con ese ID.");
+      return;
+    }
 
-    const newTask = {
-      id,
-      tarea,
-      ocupacion,
-      fecha,
-      ubicacion: userFound ? userFound.ubicacion : "None", // ahora SI toma su ubicación correcta
-      done: false, // NUEVO
+    const ubicacion = user.address || "None";
+
+    // 2. Crea nueva tarea
+    const nuevaTarea = {
+      user_id: id.trim(),
+      work: tarea.trim(),
+      occupation: ocupacion.trim(),
+      date: fecha,
+      done: false,
     };
 
-    const updatedTasks = [...existingTasks, newTask];
-    localStorage.setItem("tareas", JSON.stringify(updatedTasks));
+    const { error: insertError } = await supabase
+      .from("works")
+      .insert([nuevaTarea]);
 
+    if (insertError) {
+      console.error("❌ Error al asignar tarea:", insertError);
+      alert("❌ No se pudo asignar la tarea.");
+      return;
+    }
+
+    // 3. Limpiar campos
     setId("");
     setTarea("");
     setOcupacion("");

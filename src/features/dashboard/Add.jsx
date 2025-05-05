@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Add() {
   const [id, setId] = useState("");
@@ -6,22 +7,25 @@ export default function Add() {
   const [apellido, setApellido] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleAddUser = (e) => {
+  const handleAddUser = async (e) => {
     e.preventDefault();
 
-    const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
-
     const newUser = {
-      id,
-      password,
-      name: nombre,
-      surname: apellido,
-      location: "None",
+      id: id.trim(),
+      name: nombre.trim(),
+      surname: apellido.trim(),
+      password: password.trim(),
+      address: "None",
+      role: "user", // valor por defecto
     };
 
-    const updatedUsers = [...existingUsers, newUser];
+    const { data, error } = await supabase.from("users").insert([newUser]);
 
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    if (error) {
+      console.error("❌ Error al añadir usuario:", error);
+      alert("❌ No se pudo añadir el usuario.");
+      return;
+    }
 
     setId("");
     setNombre("");

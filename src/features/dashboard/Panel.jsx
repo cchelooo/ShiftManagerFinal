@@ -1,29 +1,42 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Panel() {
   const [nombreCompleto, setNombreCompleto] = useState("");
   const [showMenu, setShowMenu] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // <- Nuevo estado
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const name = localStorage.getItem("userName");
-    const surname = localStorage.getItem("userSurname");
-    const userId = localStorage.getItem("userId"); // <- Nuevo para verificar ID
+    const userId = localStorage.getItem("userId");
 
-    if (name && surname) {
-      setNombreCompleto(`${name} ${surname}`);
-    }
-    if (userId === "1") {
-      setIsAdmin(true); // Solo el ID 1 es admin
-    }
+    const fetchUser = async () => {
+      if (!userId) return;
+
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("name, surname, role")
+        .eq("id", userId)
+        .single();
+
+      if (error || !user) {
+        console.error("❌ Error al obtener el usuario:", error);
+        return;
+      }
+
+      setNombreCompleto(`${user.name} ${user.surname}`);
+      setIsAdmin(user.role.toLowerCase() === "admin"); // <- Compara sin importar mayúsculas
+    };
+
+    fetchUser();
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("userId");
     localStorage.removeItem("userName");
     localStorage.removeItem("userSurname");
-    localStorage.removeItem("userId"); // <- También limpiar
+    localStorage.removeItem("userRole");
     navigate("/");
   };
 
@@ -52,6 +65,7 @@ export default function Panel() {
             >
               Inicio
             </p>
+
             {isAdmin && (
               <>
                 <div className="w-full h-[1px] bg-[#3c5d75]" />
@@ -96,7 +110,6 @@ export default function Panel() {
             </span>
           </div>
 
-          {/* Menú desplegable */}
           {showMenu && (
             <div
               className="absolute bottom-[60px] left-[24px] bg-[#eef0eb] text-[#284b63] rounded-[8px] p-[12px] text-[16px] shadow-md cursor-pointer hover:bg-[#b4b8ab] transition-colors"

@@ -1,33 +1,44 @@
 import { useState } from "react";
-import users from "../data/users.json";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Login() {
   const [id, setId] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const allUsers = [...users, ...localUsers];
+    const trimmedId = id.trim();
+    const trimmedPassword = password.trim();
 
-    const userFound = allUsers.find(
-      (user) => user.id.toString() === id.trim() && user.password === password
-    );
+    console.log("🟡 Enviando ID:", trimmedId);
+    console.log("🟡 Enviando Password:", trimmedPassword);
 
-    if (userFound) {
-      console.log("✅ Login exitoso");
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", trimmedId)
+      .eq("password", trimmedPassword);
 
-      localStorage.setItem("userName", userFound.name);
-      localStorage.setItem("userSurname", userFound.surname);
-      localStorage.setItem("userId", userFound.id);
+    console.log("🔍 Resultado de Supabase:", data, "Error:", error);
 
-      navigate("/dashboard");
-    } else {
-      console.log("❌ ID o contraseña incorrectos");
+    if (error || !data || data.length === 0) {
+      setErrorMsg("❌ ID o contraseña incorrectos");
+      return;
     }
+
+    const user = data[0];
+
+    // Guardar datos básicos en localStorage
+    localStorage.setItem("userId", user.id);
+    localStorage.setItem("userName", user.name);
+    localStorage.setItem("userSurname", user.surname);
+    localStorage.setItem("userRole", user.role);
+
+    navigate("/dashboard");
   };
 
   return (
@@ -68,6 +79,10 @@ export default function Login() {
           <h2 className="text-[32px] font-semibold text-center mb-[40px] text-[#eef0eb]">
             Iniciar Sesión
           </h2>
+
+          {errorMsg && (
+            <p className="text-red-400 text-[16px] mb-4">{errorMsg}</p>
+          )}
 
           <div className="w-[452px] flex flex-col items-center">
             <div className="w-full mb-[20px]">

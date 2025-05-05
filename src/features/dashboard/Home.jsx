@@ -1,32 +1,60 @@
 import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Home() {
   const [tareas, setTareas] = useState([]);
   const [userId, setUserId] = useState(null);
+  const [direccion, setDireccion] = useState("...");
 
   useEffect(() => {
     const id = localStorage.getItem("userId");
-    setUserId(id);
-    cargarTareas(id);
+    if (id) {
+      setUserId(id);
+      cargarTareas(id);
+      cargarDireccion(id);
+    }
   }, []);
 
-  const cargarTareas = (id) => {
-    const storedTareas = JSON.parse(localStorage.getItem("tareas")) || [];
-    const tareasFiltradas = storedTareas.filter(
-      (tarea) => tarea.id.toString() === id
-    );
-    setTareas(tareasFiltradas);
+  const cargarTareas = async (id) => {
+    const { data, error } = await supabase
+      .from("works")
+      .select("*")
+      .eq("user_id", id);
+
+    if (error) {
+      console.error("❌ Error al cargar tareas:", error);
+    } else {
+      setTareas(data);
+    }
   };
 
-  const toggleDone = (index) => {
-    const storedTareas = JSON.parse(localStorage.getItem("tareas")) || [];
-    const tareaReal = storedTareas.find(
-      (t) => t.id.toString() === userId && t.tarea === tareas[index].tarea
-    );
+  const cargarDireccion = async (id) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("address")
+      .eq("id", id)
+      .single();
 
-    if (tareaReal) {
-      tareaReal.done = !tareaReal.done;
-      localStorage.setItem("tareas", JSON.stringify(storedTareas));
+    if (error) {
+      console.error("❌ Error al obtener dirección del usuario:", error);
+      setDireccion("Desconocida");
+    } else {
+      setDireccion(data.address || "No registrada");
+    }
+  };
+
+  const toggleDone = async (index) => {
+    const tarea = tareas[index];
+    const updatedDone = !tarea.done;
+
+    const { error } = await supabase
+      .from("works")
+      .update({ done: updatedDone })
+      .eq("id", tarea.id);
+
+    if (error) {
+      console.error("❌ Error al actualizar tarea:", error);
+    } else {
       cargarTareas(userId);
     }
   };
@@ -55,7 +83,7 @@ export default function Home() {
         {tareas.length > 0 ? (
           tareas.map((tarea, index) => (
             <div
-              key={index}
+              key={tarea.id}
               className="grid grid-cols-[1fr_1fr_1fr_1fr_60px] bg-[#eef0eb] text-[#153243] text-[16px]"
             >
               <div
@@ -63,28 +91,28 @@ export default function Home() {
                   tarea.done ? "line-through text-gray-500" : ""
                 }`}
               >
-                {tarea.tarea}
+                {tarea.work}
               </div>
               <div
                 className={`p-[16px] border-t-[1px] border-r-[1px] border-[#284b63] ${
                   tarea.done ? "line-through text-gray-500" : ""
                 }`}
               >
-                {tarea.ocupacion}
+                {tarea.occupation}
               </div>
               <div
                 className={`p-[16px] border-t-[1px] border-r-[1px] border-[#284b63] ${
                   tarea.done ? "line-through text-gray-500" : ""
                 }`}
               >
-                {tarea.ubicacion}
+                {direccion}
               </div>
               <div
                 className={`p-[16px] border-t-[1px] border-r-[1px] border-[#284b63] ${
                   tarea.done ? "line-through text-gray-500" : ""
                 }`}
               >
-                {tarea.fecha}
+                {tarea.date}
               </div>
               <div className="flex justify-center items-center p-[16px] border-t-[1px]">
                 <input

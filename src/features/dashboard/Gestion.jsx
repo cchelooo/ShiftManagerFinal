@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import users from "../data/users.json";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function Gestion() {
   const [id, setId] = useState("");
@@ -11,60 +11,68 @@ export default function Gestion() {
 
   useEffect(() => {
     if (id.trim() !== "") {
-      const localUsers = JSON.parse(localStorage.getItem("users")) || [];
-      const allUsers = [...users, ...localUsers];
-
-      const user = allUsers.find((user) => user.id.toString() === id.trim());
-      if (user) {
-        setNombre(user.name);
-        setApellido(user.surname);
-        setPassword(user.password);
-        setUbicacion(user.ubicacion || "");
-      } else {
-        setNombre("");
-        setApellido("");
-        setPassword("");
-        setUbicacion("");
-      }
+      fetchUser(id.trim());
     } else {
-      setNombre("");
-      setApellido("");
-      setPassword("");
-      setUbicacion("");
+      resetForm();
     }
   }, [id]);
 
-  const handleGestionar = () => {
-    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const updatedUsers = localUsers.map((user) => {
-      if (user.id.toString() === id.trim()) {
-        return {
-          ...user,
-          name: nombre,
-          surname: apellido,
-          password: password,
-          ubicacion: ubicacion || "None",
-        };
-      }
-      return user;
-    });
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-    alert("Usuario actualizado correctamente ✅");
+  const fetchUser = async (userId) => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error("❌ Usuario no encontrado:", error);
+      resetForm();
+    } else {
+      setNombre(data.name || "");
+      setApellido(data.surname || "");
+      setPassword(data.password || "");
+      setUbicacion(data.address || "");
+    }
   };
 
-  const handleEliminar = () => {
-    const localUsers = JSON.parse(localStorage.getItem("users")) || [];
-    const filteredUsers = localUsers.filter(
-      (user) => user.id.toString() !== id.trim()
-    );
-    localStorage.setItem("users", JSON.stringify(filteredUsers));
-    setId("");
+  const resetForm = () => {
     setNombre("");
     setApellido("");
     setPassword("");
     setUbicacion("");
-    setConfirmarEliminar(false);
-    alert("Usuario eliminado correctamente ✅");
+  };
+
+  const handleGestionar = async () => {
+    const { error } = await supabase
+      .from("users")
+      .update({
+        name: nombre.trim(),
+        surname: apellido.trim(),
+        password: password.trim(),
+        address: ubicacion.trim() || "None",
+      })
+      .eq("id", id.trim());
+
+    if (error) {
+      console.error("❌ Error al actualizar usuario:", error);
+      alert("❌ No se pudo actualizar el usuario.");
+    } else {
+      alert("✅ Usuario actualizado correctamente");
+    }
+  };
+
+  const handleEliminar = async () => {
+    const { error } = await supabase.from("users").delete().eq("id", id.trim());
+
+    if (error) {
+      console.error("❌ Error al eliminar usuario:", error);
+      alert("❌ No se pudo eliminar el usuario.");
+    } else {
+      resetForm();
+      setId("");
+      setConfirmarEliminar(false);
+      alert("✅ Usuario eliminado correctamente");
+    }
   };
 
   return (
