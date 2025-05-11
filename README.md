@@ -10,7 +10,7 @@ Shift Manager es una aplicación web construida con React que permite a un admin
 📝 Crear, editar y eliminar empleados  
 
 Accede desde tu navegador:  
-https://shift-manager-rho.vercel.app/
+https://shift-manager-final.vercel.app/
 
 ## 🧪 Acceso de prueba
 
