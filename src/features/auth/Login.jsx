@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
+import bcrypt from "bcryptjs";
 
 export default function Login() {
   const [id, setId] = useState("");
@@ -17,26 +18,36 @@ export default function Login() {
     console.log("🟡 Enviando ID:", trimmedId);
     console.log("🟡 Enviando Password:", trimmedPassword);
 
-    const { data, error } = await supabase
+    // Buscar usuario solo por ID
+    const { data: userData, error } = await supabase
       .from("users")
       .select("*")
       .eq("id", trimmedId)
-      .eq("password", trimmedPassword);
+      .single();
 
-    console.log("🔍 Resultado de Supabase:", data, "Error:", error);
+    console.log("🔍 Resultado de Supabase:", userData, "Error:", error);
 
-    if (error || !data || data.length === 0) {
-      setErrorMsg("❌ ID o contraseña incorrectos");
+    if (error || !userData) {
+      setErrorMsg("❌ ID incorrecto");
       return;
     }
 
-    const user = data[0];
+    // Verificar contraseña usando bcrypt
+    const passwordValida = await bcrypt.compare(
+      trimmedPassword,
+      userData.password
+    );
+
+    if (!passwordValida) {
+      setErrorMsg("❌ Contraseña incorrecta");
+      return;
+    }
 
     // Guardar datos básicos en localStorage
-    localStorage.setItem("userId", user.id);
-    localStorage.setItem("userName", user.name);
-    localStorage.setItem("userSurname", user.surname);
-    localStorage.setItem("userRole", user.role);
+    localStorage.setItem("userId", userData.id);
+    localStorage.setItem("userName", userData.name);
+    localStorage.setItem("userSurname", userData.surname);
+    localStorage.setItem("userRole", userData.role);
 
     navigate("/dashboard");
   };

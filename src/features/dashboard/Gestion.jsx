@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import bcrypt from "bcryptjs";
 
 export default function Gestion() {
   const [id, setId] = useState("");
@@ -8,6 +9,7 @@ export default function Gestion() {
   const [password, setPassword] = useState("");
   const [ubicacion, setUbicacion] = useState("");
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+  const [originalPassword, setOriginalPassword] = useState(""); // ← para detectar si fue editada
 
   useEffect(() => {
     if (id.trim() !== "") {
@@ -30,7 +32,8 @@ export default function Gestion() {
     } else {
       setNombre(data.name || "");
       setApellido(data.surname || "");
-      setPassword(data.password || "");
+      setPassword(""); // ← no mostrar hash
+      setOriginalPassword(data.password || ""); // ← guardar hash original
       setUbicacion(data.address || "");
     }
   };
@@ -39,16 +42,24 @@ export default function Gestion() {
     setNombre("");
     setApellido("");
     setPassword("");
+    setOriginalPassword("");
     setUbicacion("");
   };
 
   const handleGestionar = async () => {
+    let passwordFinal = originalPassword;
+
+    // Si el usuario escribió una nueva contraseña, la ciframos
+    if (password.trim() !== "") {
+      passwordFinal = await bcrypt.hash(password.trim(), 10);
+    }
+
     const { error } = await supabase
       .from("users")
       .update({
         name: nombre.trim(),
         surname: apellido.trim(),
-        password: password.trim(),
+        password: passwordFinal,
         address: ubicacion.trim() || "None",
       })
       .eq("id", id.trim());

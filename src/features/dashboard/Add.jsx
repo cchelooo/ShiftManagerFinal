@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import bcrypt from "bcryptjs";
 
 export default function Add() {
   const [id, setId] = useState("");
@@ -10,29 +11,36 @@ export default function Add() {
   const handleAddUser = async (e) => {
     e.preventDefault();
 
-    const newUser = {
-      id: id.trim(),
-      name: nombre.trim(),
-      surname: apellido.trim(),
-      password: password.trim(),
-      address: "None",
-      role: "user", // valor por defecto
-    };
+    try {
+      const hashedPassword = await bcrypt.hash(password.trim(), 10); // Cifrado de contraseña
 
-    const { data, error } = await supabase.from("users").insert([newUser]);
+      const newUser = {
+        id: id.trim(),
+        name: nombre.trim(),
+        surname: apellido.trim(),
+        password: hashedPassword,
+        address: "None",
+        role: "user", // valor por defecto
+      };
 
-    if (error) {
-      console.error("❌ Error al añadir usuario:", error);
-      alert("❌ No se pudo añadir el usuario.");
-      return;
+      const { error } = await supabase.from("users").insert([newUser]);
+
+      if (error) {
+        console.error("❌ Error al añadir usuario:", error);
+        alert("❌ No se pudo añadir el usuario.");
+        return;
+      }
+
+      setId("");
+      setNombre("");
+      setApellido("");
+      setPassword("");
+
+      alert("✅ Usuario añadido correctamente");
+    } catch (err) {
+      console.error("❌ Error al encriptar contraseña:", err);
+      alert("❌ Ocurrió un error al crear el usuario.");
     }
-
-    setId("");
-    setNombre("");
-    setApellido("");
-    setPassword("");
-
-    alert("✅ Usuario añadido correctamente");
   };
 
   return (
