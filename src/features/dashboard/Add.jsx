@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import bcrypt from "bcryptjs";
 
@@ -8,11 +8,33 @@ export default function Add() {
   const [apellido, setApellido] = useState("");
   const [password, setPassword] = useState("");
 
+  // Obtener el siguiente ID al montar el componente
+  useEffect(() => {
+    const obtenerSiguienteId = async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("id")
+        .order("id", { ascending: false })
+        .limit(1);
+
+      if (error) {
+        console.error("❌ Error al obtener último ID:", error);
+        return;
+      }
+
+      const ultimoId = data?.[0]?.id || "0";
+      const siguienteId = (parseInt(ultimoId) + 1).toString();
+      setId(siguienteId);
+    };
+
+    obtenerSiguienteId();
+  }, []);
+
   const handleAddUser = async (e) => {
     e.preventDefault();
 
     try {
-      const hashedPassword = await bcrypt.hash(password.trim(), 10); // Cifrado de contraseña
+      const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
       const newUser = {
         id: id.trim(),
@@ -20,7 +42,7 @@ export default function Add() {
         surname: apellido.trim(),
         password: hashedPassword,
         address: "None",
-        role: "user", // valor por defecto
+        role: "user",
       };
 
       const { error } = await supabase.from("users").insert([newUser]);
@@ -31,14 +53,17 @@ export default function Add() {
         return;
       }
 
-      setId("");
       setNombre("");
       setApellido("");
       setPassword("");
 
+      // Actualizar a un nuevo siguiente ID
+      const nuevoId = (parseInt(id) + 1).toString();
+      setId(nuevoId);
+
       alert("✅ Usuario añadido correctamente");
     } catch (err) {
-      console.error("❌ Error al encriptar contraseña:", err);
+      console.error("❌ Error general:", err);
       alert("❌ Ocurrió un error al crear el usuario.");
     }
   };
@@ -61,10 +86,8 @@ export default function Add() {
             <input
               type="text"
               value={id}
-              onChange={(e) => setId(e.target.value)}
-              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#eef0eb] text-[#153243]"
-              placeholder="Ingrese el ID"
-              required
+              readOnly
+              className="w-full p-[12px] box-border rounded-[8px] border-2 border-[#284b63] bg-[#d6d6d6] text-[#153243] cursor-not-allowed"
             />
           </div>
 
